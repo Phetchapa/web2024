@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>work 1: แบบทดสอบ</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@3.7.4/dist/vuetify.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@3.7.4/dist/vuetify.min.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <v-app>
+            <v-container class="pa-5">
+                <v-card class="pa-5" color="#4b9b8e" dark>
+                    <v-card-title class="text-center">
+                        <h1>แบบทดสอบตำนานแมวเหมียว</h1>
+                    </v-card-title>
+                    <v-card-subtitle class="text-center">
+                        <p>{{ currentDate }}</p>
+                    </v-card-subtitle>
+                    <v-card-text class="text-center">
+                        <p>วัดความรู้เกี่ยวกับตำนานแมวเหมียวทั่วโลก</p>
+                    </v-card-text>
+                </v-card>
+                <v-container class="mt-5">
+                    <v-row v-if="!quizStarted" class="justify-center">
+                        <v-btn color="#4b9b8e" dark large @click="startQuiz" class="start-quiz-btn">เริ่มทำแบบทดสอบ</v-btn>
+                    </v-row>
+                    <v-row v-if="!quizStarted" class="justify-center">
+                        <img src="./cat2.svg" alt="cat2" class="cat-image-full" />
+                    </v-row>
+                    <v-row v-else>
+                        <v-col cols="12" class="mb-4 text-center">
+                            <h2 v-if="score !== null" class="mb-4">คะแนนรวม {{ score }}/{{ quizlist.length }}</h2>
+                            <v-btn v-if="score !== null" color="secondary" @click="resetQuiz"
+                                class="mt-2">ทำแบบทดสอบใหม่</v-btn>
+                        </v-col>
+                        <v-col v-for="(quiz, index) in quizlist" :key="index" cols="12" :ref="`quiz-${index}`">
+                            <v-card class="pa-4 mb-4" outlined>
+                                <v-card-title>
+                                    <div>ข้อที่ {{ index + 1 }}. {{ quiz.title }}</div>
+                                </v-card-title>
+                                <v-card-text>
+                                    <v-radio-group v-model="userAnswers[index]" :disabled="score !== null"
+                                        @change="handleAnswer(index)">
+                                        <v-radio v-for="(option, optionIndex) in quiz.option" :key="optionIndex"
+                                            :label="`${optionIndex + 1}. ${option}`" :value="optionIndex + 1"
+                                            class="my-2" :class="getAnswerClass(index, optionIndex)" />
+                                    </v-radio-group>
+                                    <div v-if="score !== null">
+                                        <div
+                                            :class="{'text-success': userAnswers[index] === quiz.answer, 'error--text': userAnswers[index] !== quiz.answer}">
+                                            คะแนน: {{ userAnswers[index] === quiz.answer ? '1/1' : '0/1' }}
+                                        </div>
+                                        <div v-if="userAnswers[index] !== quiz.answer" class="text-danger mt-2">
+                                            คำตอบที่ถูกต้องคือ: {{ quiz.answer }}. {{ quiz.option[quiz.answer - 1] }}
+                                        </div>
+                                    </div>
+                                </v-card-text>
+                            </v-card>
+                        </v-col>
+                        <v-col cols="12" class="text-center">
+                            <v-btn v-if="score === null" color="primary" @click="checkAnswers"
+                                class="mt-4">ตรวจคำตอบ</v-btn>
+                            <v-btn v-else color="secondary" @click="resetQuiz" class="mt-4">ทำแบบทดสอบใหม่</v-btn>
+                        </v-col>
+                    </v-row>
+                </v-container>
+            </v-container>
+        </v-app>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        const { createVuetify } = Vuetify;
+        const vuetify = createVuetify();
+
+        createApp({
+            data() {
+                return {
+                    quizStarted: false,
+                    quizlist: [],
+                    userAnswers: [],
+                    score: null,
+                    currentDate: new Date().toLocaleDateString('th-TH', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    })
+                };
+            },
+            mounted() {
+                this.loadQuizList();
+            },
+            methods: {
+                startQuiz() {
+                    this.quizStarted = true;
+                    this.userAnswers = Array(this.quizlist.length).fill(null);
+                },
+                loadQuizList() {
+                    fetch('quiz.json')
+                        .then(response => response.json())
+                        .then(data => {
+                            this.quizlist = data;
+                        })
+                        .catch(error => {
+                            alert('ไม่สามารถโหลดข้อมูลจาก quiz.json ได้');
+                        });
+                },
+                checkAnswers() {
+                    let score = 0;
+                    for (let i = 0; i < this.quizlist.length; i++) {
+                        if (this.userAnswers[i] === this.quizlist[i].answer) {
+                            score++;
+                        }
+                    }
+                    this.score = score;
+
+                    // เลื่อนหน้าจอไปด้านบนหลังจากตรวจคำตอบ
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+                resetQuiz() {
+                    this.quizStarted = false;
+                    this.userAnswers = [];
+                    this.score = null;
+                },
+                getAnswerClass(index, optionIndex) {
+                    if (this.score !== null) {
+                        if (this.userAnswers[index] === optionIndex + 1) {
+                            if (this.quizlist[index].answer === optionIndex + 1) {
+                                return 'success--text'; // ตอบถูก ช้อยที่ตอบเป็นสีเขียว
+                            } else {
+                                return 'error--text'; // ตอบผิด ช้อยที่ตอบเป็นสีแดง
+                            }
+                        }
+                        if (this.quizlist[index].answer === optionIndex + 1) {
+                            return 'success--text'; // คำตอบที่ถูกต้องเป็นสีเขียว
+                        }
+                    }
+                    return '';
+                },
+                handleAnswer(index) {
+                    this.scrollToNext(index);
+                },
+                scrollToNext(index) {
+                    if (index + 1 < this.quizlist.length) {
+                        this.$nextTick(() => {
+                            const nextElement = this.$refs[`quiz-${index + 1}`];
+                            if (nextElement && nextElement[0] && nextElement[0].scrollIntoView) {
+                                nextElement[0].scrollIntoView({ behavior: 'smooth' });
+                            } else if (nextElement && nextElement.scrollIntoView) {
+                                nextElement.scrollIntoView({ behavior: 'smooth' });
+                            }
+                        });
+                    }
+                }
+            }
+        }).use(vuetify).mount('#app');
+    </script>
+
+    <style>
+        body {
+            background-image: url('./cat1.svg');
+            background-size: cover;
+            background-position: center;
+        }
+
+        #app {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            max-width: 75%;
+            margin: 50px auto;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.3);
+            padding: 20px;
+        }
+
+        .success--text {
+            color: green;
+        }
+
+        .error--text {
+            color: red;
+        }
+
+        .start-quiz-btn {
+            margin-bottom: 20px;
+        }
+
+        .cat-image-full {
+            width: 100%;
+            height: auto;
+            margin-top: 20px;
+        }
+
+        v-btn {
+            background-color: #4b9b8e !important;
+            color: white !important;
+            font-weight: bold;
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-size: 16px;
+        }
+
+        v-card {
+            border-radius: 15px;
+        }
+    </style>
+
+</body>
+
+</html>
