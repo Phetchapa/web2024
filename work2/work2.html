@@ -86,10 +86,13 @@
                     quizlist: [],
                     userAnswers: [],
                     score: null,
-                    currentDate: new Date().toLocaleDateString('th-TH', {
+                    currentDate: new Date().toLocaleString('th-TH', {
                         year: 'numeric',
                         month: 'long',
-                        day: 'numeric'
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: 'numeric',
+                        second: 'numeric'
                     })
                 };
             },
@@ -170,7 +173,7 @@
         }
 
         #app {
-            background-color: rgba(255, 255, 255, 0.9);
+            background-color: rgba(255, 255, 255);
             border-radius: 15px;
             max-width: 75%;
             margin: 50px auto;
