@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Work 3: แบบทดสอบ</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+</head>
+
+<body>
+    <div id="app"></div>
+
+    <script type="text/babel">
+        const App = () => {
+            const [quizStarted, setQuizStarted] = React.useState(false);
+            const [quizList, setQuizList] = React.useState([]);
+            const [userAnswers, setUserAnswers] = React.useState([]);
+            const [score, setScore] = React.useState(null);
+            const [currentDate, setCurrentDate] = React.useState(new Date().toLocaleString('th-TH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                second: 'numeric'
+            }));
+
+            const questionRefs = React.useRef([]);
+
+            React.useEffect(() => {
+                fetch('quiz.json')
+                    .then(response => response.json())
+                    .then(data => setQuizList(data))
+                    .catch(() => alert('ไม่สามารถโหลดข้อมูลจาก quiz.json ได้'));
+
+                const timer = setInterval(() => {
+                    setCurrentDate(new Date().toLocaleString('th-TH', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: 'numeric',
+                        second: 'numeric'
+                    }));
+                }, 1000);
+
+                return () => clearInterval(timer);
+            }, []);
+
+            const startQuiz = () => {
+                setQuizStarted(true);
+                setUserAnswers(new Array(quizList.length).fill(null));
+            };
+
+            const handleAnswer = (index, answer) => {
+                const updatedAnswers = [...userAnswers];
+                updatedAnswers[index] = answer;
+                setUserAnswers(updatedAnswers);
+
+                if (index + 1 < quizList.length) {
+                    questionRefs.current[index + 1]?.scrollIntoView({ behavior: 'smooth' });
+                }
+            };
+
+            const checkAnswers = () => {
+                const newScore = quizList.reduce((acc, quiz, index) => {
+                    return acc + (userAnswers[index] === quiz.answer ? 1 : 0);
+                }, 0);
+                setScore(newScore);
+                window.scrollTo({ top: 0 });
+            };
+
+            const resetQuiz = () => {
+                setQuizStarted(false);
+                setUserAnswers([]);
+                setScore(null);
+            };
+
+            const getAnswerClass = (index, optionIndex) => {
+                if (score !== null) {
+                    if (userAnswers[index] === optionIndex + 1) {
+                        return quizList[index].answer === optionIndex + 1 ? 'text-success' : 'text-danger';
+                    }
+                    if (quizList[index].answer === optionIndex + 1) {
+                        return 'text-success';
+                    }
+                }
+                return '';
+            };
+
+            return (
+                <div className="container m-5 p-4 bg-white rounded shadow" style={{ opacity: 0.9 }}>
+                    <div className="card bg-dark text-white text-center mb-4">
+                        <div className="card-body">
+                            <h1>แบบทดสอบเกี่ยวกับเค้ก</h1>
+                            <p>{currentDate}</p>
+                            <p>มาวัดระดับความรู้ที่คุณรู้เกี่ยวกับเค้กกันเถอะ !</p>
+                        </div>
+                    </div>
+
+                    {!quizStarted ? (
+                        <>
+                            <div className="text-center mb-4">
+                                <button className="btn btn-warning btn-lg text-white" onClick={startQuiz}>เริ่มทำแบบทดสอบ</button>
+                            </div>
+                            <div className="text-center">
+                                <img src="./cake2.svg" alt="cake" className="img-fluid" />
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            {score !== null && (
+                                <div className="text-center mb-4">
+                                    <h2>คะแนนรวม {score}/{quizList.length}</h2>
+                                    <button className="btn btn-warning mt-3 text-white" onClick={resetQuiz}>ทำแบบทดสอบใหม่</button>
+                                </div>
+                            )}
+
+                            {quizList.map((quiz, index) => (
+                                <div className="card mb-4" key={index} ref={el => questionRefs.current[index] = el}>
+                                    <div className="card-body">
+                                        <h5>ข้อที่ {index + 1}: {quiz.title}</h5>
+                                        <div>
+                                            {quiz.option.map((option, optionIndex) => (
+                                                <div key={optionIndex} className="form-check">
+                                                    <input
+                                                        type="radio"
+                                                        name={`quiz-${index}`}
+                                                        id={`quiz-${index}-option-${optionIndex}`}
+                                                        className="form-check-input"
+                                                        disabled={score !== null}
+                                                        onChange={() => handleAnswer(index, optionIndex + 1)}
+                                                    />
+                                                    <label
+                                                        htmlFor={`quiz-${index}-option-${optionIndex}`}
+                                                        className={`form-check-label ${getAnswerClass(index, optionIndex)}`}
+                                                    >
+                                                        {optionIndex + 1}. {option}
+                                                    </label>
+                                                </div>
+                                            ))}
+                                            {score !== null && (
+                                                <div className={`mt-3 ${userAnswers[index] === quiz.answer ? 'text-success' : 'text-danger'}`}>
+                                                    คะแนน: {userAnswers[index] === quiz.answer ? '1/1' : '0/1'}
+                                                </div>
+                                            )}
+                                            {score !== null && userAnswers[index] !== quiz.answer && (
+                                                <div className="text-danger mt-2">
+                                                    คำตอบที่ถูกต้องคือ: {quiz.answer}. {quiz.option[quiz.answer - 1]}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+
+                            {score === null && (
+                                <div className="text-center">
+                                    <button className="btn btn-warning mt-4 text-white" onClick={checkAnswers}>ตรวจคำตอบ</button>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('app')).render(<App />);
+    </script>
+
+    <style>
+        body {
+            background-image: url('./cake1.svg');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .text-success {
+            color: green !important;
+        }
+
+        .text-danger {
+            color: red !important;
+        }
+    </style>
+</body>
+
+</html>
