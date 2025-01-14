@@ -16,12 +16,13 @@
 
         <a-entity rotation="0 0 0" animation="property: rotation; to: 0 360 0; loop: true; dur: 10000">
             <!-- <a-sphere position="5 2 0" color="mediumseagreen"></a-sphere> -->
-            <a-entity gltf-model="Tubbs the cat.glb" position="0 0.25 -2" scale="0.75 0.75 0.75" rotation="0 45 0"
+            <a-entity gltf-model="Tubbs the cat.glb" position="0 0.25 -2" scale="1 1 1" rotation="0 45 0"
                 animation-mixer animation="property: rotation; to: 0 360 0; loop: true; dur: 400"></a-entity>
         </a-entity>
 
         <!-- กล้องที่ล็อก -->
-        <a-entity camera position="0 1.6 0" look-controls="enabled: true" wasd-controls="enabled: false"></a-entity>
+        <a-entity camera position="0 1.6 0" look-controls="pointerLockEnabled: true; reverseMouseDrag: false"
+            wasd-controls="enabled: false"></a-entity>
 
         <!-- แผ่นสี่เหลี่ยม -->
         <a-plane position="0 1.75 -2" width="2.5" height="1.25" color="#ff914d" material="shader: flat; opacity: 0.8"
