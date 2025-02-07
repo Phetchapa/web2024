@@ -87,23 +87,30 @@ class App extends React.Component {
           stdemail: "",
           stdphone: "",
         });
+        this.readData();
       });
   }
 
   edit(std) {
-    this.setState({
-      stdid: std.id,
-      stdtitle: std.title,
-      stdfname: std.fname,
-      stdlname: std.lname,
-      stdemail: std.email,
-      stdphone: std.phone,
-    });
+    this.setState(
+      {
+        stdid: std.id,
+        stdtitle: std.title,
+        stdfname: std.fname,
+        stdlname: std.lname,
+        stdemail: std.email,
+        stdphone: std.phone,
+      },
+      () => this.readData()
+    );
   }
 
   delete(std) {
     if (confirm("ต้องการลบข้อมูล")) {
-      db.collection("students").doc(std.id).delete();
+      db.collection("students")
+        .doc(std.id)
+        .delete()
+        .then(() => this.readData());
     }
   }
 
