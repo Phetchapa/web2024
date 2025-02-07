@@ -1,7 +1,7 @@
 const RB = ReactBootstrap;
-const { Alert, Card, Button, Table } = ReactBootstrap;
+const { Alert, Card, Button, Table, Form, Container, Row, Col, Image } =
+  ReactBootstrap;
 
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyAXPvgUlVYdGbWVOpOjREkH0fIhF1j5XEk",
   authDomain: "web2568-ebf9e.firebaseapp.com",
@@ -13,26 +13,9 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-// db.collection("students").get().then((querySnapshot) => {
-//   querySnapshot.forEach((doc) => {
-//       console.log(`${doc.id} =>`,doc.data());
-//   });
-// });
 
 class App extends React.Component {
-  title = (
-    <Alert variant="info">
-      <b>Work6 :</b> Firebase
-    </Alert>
-  );
-  footer = (
-    <div>
-      By xxxxxxxxxx-x xxxxxxxxxxxxx xxxxxxxxxxxxxx <br />
-      College of Computing, Khon Kaen University
-    </div>
-  );
   state = {
-    scene: 0,
     students: [],
     stdid: "",
     stdtitle: "",
@@ -46,16 +29,11 @@ class App extends React.Component {
   constructor() {
     super();
     firebase.auth().onAuthStateChanged((user) => {
-      if (user) {
-        this.setState({ user: user.toJSON() });
-      } else {
-        this.setState({ user: null });
-      }
+      this.setState({ user: user ? user.toJSON() : null });
     });
   }
 
   google_login() {
-    // Using a popup.
     var provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope("profile");
     provider.addScope("email");
@@ -68,65 +46,6 @@ class App extends React.Component {
     }
   }
 
-  render() {
-    // var stext = JSON.stringify(this.state.students);
-    return (
-      <Card>
-        <Card.Header>{this.title}</Card.Header>
-        <LoginBox user={this.state.user} app={this}></LoginBox>
-        <Card.Body>
-          <Button onClick={() => this.readData()}>Read Data</Button>
-          <Button onClick={() => this.autoRead()}>Auto Read</Button>
-          <div>
-            <StudentTable data={this.state.students} app={this} />
-          </div>
-        </Card.Body>
-        <Card.Footer>
-          <b>เพิ่ม/แก้ไขข้อมูล นักศึกษา :</b>
-          <br />
-          <TextInput
-            label="ID"
-            app={this}
-            value="stdid"
-            style={{ width: 120 }}
-          />
-          <TextInput
-            label="คำนำหน้า"
-            app={this}
-            value="stdtitle"
-            style={{ width: 100 }}
-          />
-          <TextInput
-            label="ชื่อ"
-            app={this}
-            value="stdfname"
-            style={{ width: 120 }}
-          />
-          <TextInput
-            label="สกุล"
-            app={this}
-            value="stdlname"
-            style={{ width: 120 }}
-          />
-          <TextInput
-            label="Email"
-            app={this}
-            value="stdemail"
-            style={{ width: 150 }}
-          />
-          <TextInput
-            label="Phone"
-            app={this}
-            value="stdphone"
-            style={{ width: 120 }}
-          />
-          <Button onClick={() => this.insertData()}>Save</Button>
-        </Card.Footer>
-        <Card.Footer>{this.footer}</Card.Footer>
-      </Card>
-    );
-  }
-
   readData() {
     db.collection("students")
       .get()
@@ -135,7 +54,6 @@ class App extends React.Component {
         querySnapshot.forEach((doc) => {
           stdlist.push({ id: doc.id, ...doc.data() });
         });
-        console.log(stdlist);
         this.setState({ students: stdlist });
       });
   }
@@ -151,13 +69,25 @@ class App extends React.Component {
   }
 
   insertData() {
-    db.collection("students").doc(this.state.stdid).set({
-      title: this.state.stdtitle,
-      fname: this.state.stdfname,
-      lname: this.state.stdlname,
-      phone: this.state.stdphone,
-      email: this.state.stdemail,
-    });
+    db.collection("students")
+      .doc(this.state.stdid)
+      .set({
+        title: this.state.stdtitle,
+        fname: this.state.stdfname,
+        lname: this.state.stdlname,
+        phone: this.state.stdphone,
+        email: this.state.stdemail,
+      })
+      .then(() => {
+        this.setState({
+          stdid: "",
+          stdtitle: "",
+          stdfname: "",
+          stdlname: "",
+          stdemail: "",
+          stdphone: "",
+        });
+      });
   }
 
   edit(std) {
@@ -176,83 +106,160 @@ class App extends React.Component {
       db.collection("students").doc(std.id).delete();
     }
   }
+
+  render() {
+    return (
+      <Container className="p-4">
+        <Card>
+          <Card.Header as="h5" className="bg-info text-white text-center">
+            Work6 : Firebase
+          </Card.Header>
+          <Card.Body>
+            <LoginBox user={this.state.user} app={this} />
+            <div className="my-3">
+              <Button
+                variant="primary"
+                className="me-2"
+                onClick={() => this.readData()}
+              >
+                Read Data
+              </Button>
+              <Button variant="secondary" onClick={() => this.autoRead()}>
+                Auto Read
+              </Button>
+            </div>
+            <StudentTable data={this.state.students} app={this} />
+            <StudentForm app={this} />
+          </Card.Body>
+          <Card.Footer className="text-center">
+            By 653380144-8 นางสาวเพ็ชชภา นูทอง College of Computing, KKU
+          </Card.Footer>
+        </Card>
+      </Container>
+    );
+  }
 }
 
 function StudentTable({ data, app }) {
   return (
-    <table className="table">
-      <tr>
-        <td>รหัส</td>
-        <td>คำนำหน้า</td>
-        <td>ชื่อ</td>
-        <td>สกุล</td>
-        <td>email</td>
-        <td>phone</td>
-      </tr>
-      {data.map((s) => (
+    <Table striped bordered hover>
+      <thead className="bg-light">
         <tr>
-          <td>{s.id}</td>
-          <td>{s.title}</td>
-          <td>{s.fname}</td>
-          <td>{s.lname}</td>
-          <td>{s.email}</td>
-          <td>{s.phone}</td>
-          <td>
-            <EditButton std={s} app={app} />
-          </td>
-          <td>
-            <DeleteButton std={s} app={app} />
-          </td>
+          <th>ID</th>
+          <th>คำนำหน้า</th>
+          <th>ชื่อ</th>
+          <th>สกุล</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Actions</th>
         </tr>
-      ))}
-    </table>
+      </thead>
+      <tbody>
+        {data.map((s) => (
+          <tr key={s.id}>
+            <td>{s.id}</td>
+            <td>{s.title}</td>
+            <td>{s.fname}</td>
+            <td>{s.lname}</td>
+            <td>{s.email}</td>
+            <td>{s.phone}</td>
+            <td>
+              <Button
+                variant="warning"
+                size="sm"
+                onClick={() => app.edit(s)}
+                className="me-2"
+              >
+                แก้ไข
+              </Button>
+              <Button variant="danger" size="sm" onClick={() => app.delete(s)}>
+                ลบ
+              </Button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </Table>
   );
 }
 
-function TextInput({ label, app, value, style }) {
+function StudentForm({ app }) {
   return (
-    <label className="form-label">
-      {label}:
-      <input
-        className="form-control"
-        style={style}
-        value={app.state[value]}
-        onChange={(ev) => {
-          var s = {};
-          s[value] = ev.target.value;
-          app.setState(s);
-        }}
-      ></input>
-    </label>
+    <Form>
+      <Row>
+        <Col>
+          <Form.Control
+            placeholder="ID"
+            value={app.state.stdid}
+            onChange={(e) => app.setState({ stdid: e.target.value })}
+          />
+        </Col>
+        <Col>
+          <Form.Control
+            placeholder="คำนำหน้า"
+            value={app.state.stdtitle}
+            onChange={(e) => app.setState({ stdtitle: e.target.value })}
+          />
+        </Col>
+      </Row>
+      <Row className="mt-2">
+        <Col>
+          <Form.Control
+            placeholder="ชื่อ"
+            value={app.state.stdfname}
+            onChange={(e) => app.setState({ stdfname: e.target.value })}
+          />
+        </Col>
+        <Col>
+          <Form.Control
+            placeholder="สกุล"
+            value={app.state.stdlname}
+            onChange={(e) => app.setState({ stdlname: e.target.value })}
+          />
+        </Col>
+      </Row>
+      <Row className="mt-2">
+        <Col>
+          <Form.Control
+            type="email"
+            placeholder="Email"
+            value={app.state.stdemail}
+            onChange={(e) => app.setState({ stdemail: e.target.value })}
+          />
+        </Col>
+        <Col>
+          <Form.Control
+            placeholder="Phone"
+            value={app.state.stdphone}
+            onChange={(e) => app.setState({ stdphone: e.target.value })}
+          />
+        </Col>
+      </Row>
+      <Button
+        variant="success"
+        className="mt-3"
+        onClick={() => app.insertData()}
+      >
+        บันทึกข้อมูล
+      </Button>
+    </Form>
   );
 }
 
-function EditButton({ std, app }) {
-  return <button onClick={() => app.edit(std)}>แก้ไข</button>;
-}
-
-function DeleteButton({ std, app }) {
-  return <button onClick={() => app.delete(std)}>ลบ</button>;
-}
-
-function LoginBox(props) {
-  const u = props.user;
-  const app = props.app;
-  if (!u) {
-    return (
-      <div>
-        <button onClick={() => app.google_login()}>Login</button>
-      </div>
-    );
-  } else {
-    return (
-      <div>
-        <img src={u.photoURL} />
-        {u.email}
-        <button onClick={() => app.google_logout()}>Logout</button>
-      </div>
-    );
-  }
+function LoginBox({ user, app }) {
+  return user ? (
+    <div className="text-center">
+      <Image src={user.photoURL} roundedCircle width={50} className="me-2" />
+      {user.email}{" "}
+      <Button variant="danger" size="sm" onClick={() => app.google_logout()}>
+        Logout
+      </Button>
+    </div>
+  ) : (
+    <Button variant="primary" onClick={() => app.google_login()}>
+      Login with Google
+    </Button>
+  );
 }
 
 const container = document.getElementById("myapp");
