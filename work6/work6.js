@@ -193,7 +193,7 @@ function StudentTable({ data, app }) {
 function StudentForm({ app }) {
   return (
     <Form>
-      <Row>
+      <Row className="mt-2">
         <Col>
           <Form.Control
             placeholder="ID"
